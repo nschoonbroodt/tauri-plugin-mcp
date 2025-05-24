@@ -5,7 +5,8 @@ Cargo.log
 
 # Tauri
 .tauri/
-
+mcp-server-ts/build/
+dist-js/
 # TypeScript/JavaScript
 node_modules/
 dist/
