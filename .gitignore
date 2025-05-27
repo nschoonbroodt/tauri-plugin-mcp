@@ -71,3 +71,7 @@ Desktop.ini
 *.AppImage
 *.msi
 *.app
+
+
+.claude/
+CLAUDE.md

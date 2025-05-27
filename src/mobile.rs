@@ -25,7 +25,7 @@ pub fn init<R: Runtime, C: DeserializeOwned>(
     // For now, we'll initialize it the same way as desktop, but in a real implementation
     // you might want to use a different approach or disable it on mobile
     let socket_server = if config.start_socket_server {
-        let mut server = SocketServer::new(app.clone(), config.socket_path.clone());
+        let mut server = SocketServer::new(app.clone(), config.socket_type.clone());
         server.start()?;
         Some(Arc::new(Mutex::new(server)))
     } else {

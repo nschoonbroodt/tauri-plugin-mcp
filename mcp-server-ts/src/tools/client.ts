@@ -6,39 +6,68 @@ import * as fs from 'fs';
 const SOCKET_FILENAME = 'tauri-mcp.sock';
 const DEFAULT_SOCKET_PATH = `/private/tmp/${SOCKET_FILENAME}`;
 
-// Socket client for Tauri IPC
+// Connection configuration types
+export interface IpcConfig {
+  type: 'ipc';
+  path?: string;
+}
+
+export interface TcpConfig {
+  type: 'tcp';
+  host: string;
+  port: number;
+}
+
+export type ConnectionConfig = IpcConfig | TcpConfig;
+
+// Socket client for Tauri IPC/TCP
 export class TauriSocketClient {
-  private socketPath: string;
+  private config: ConnectionConfig;
   private client: net.Socket | null = null;
   private isConnected = false;
   private responseCallbacks: Map<string, { resolve: (value: any) => void, reject: (reason: any) => void }> = new Map();
   private buffer = '';
   private reconnectAttempts = 0;
 
-  constructor(socketPath?: string) {
-    // Use the provided socket path or default
-    this.socketPath = socketPath || DEFAULT_SOCKET_PATH;
+  constructor(config?: ConnectionConfig) {
+    // Default to IPC with default path
+    this.config = config || { type: 'ipc', path: DEFAULT_SOCKET_PATH };
   }
 
   async connect(): Promise<void> {
     if (this.isConnected) return;
     
-    let connectionPath = this.socketPath;
-    
-    // On Windows, the socket is created as a named pipe in a specific location
-    if (os.platform() === 'win32') {
-      // This is where we found the pipe from our system inspection
-      connectionPath = `\\\\.\\pipe\\tmp\\${SOCKET_FILENAME}`;
-      console.error(`Using Windows-specific pipe path: ${connectionPath}`);
-    }
-    
-    
     return new Promise((resolve, reject) => {
-      console.error(`Connecting to socket: ${connectionPath} (attempt ${this.reconnectAttempts + 1})`);
-      this.client = net.createConnection({ path: connectionPath }, () => {
+      let connectionOptions: net.NetConnectOpts;
+      let connectionInfo: string;
+
+      if (this.config.type === 'tcp') {
+        // TCP connection
+        connectionOptions = {
+          host: this.config.host,
+          port: this.config.port
+        };
+        connectionInfo = `TCP ${this.config.host}:${this.config.port}`;
+      } else {
+        // IPC connection
+        let connectionPath = this.config.path || DEFAULT_SOCKET_PATH;
+        
+        // On Windows, the socket is created as a named pipe in a specific location
+        if (os.platform() === 'win32') {
+          connectionPath = `\\\\.\\pipe\\tmp\\${SOCKET_FILENAME}`;
+          console.error(`Using Windows-specific pipe path: ${connectionPath}`);
+        }
+        
+        connectionOptions = { path: connectionPath };
+        connectionInfo = `IPC ${connectionPath}`;
+      }
+
+      console.error(`Connecting to ${connectionInfo} (attempt ${this.reconnectAttempts + 1})`);
+      
+      this.client = net.createConnection(connectionOptions, () => {
         this.isConnected = true;
         this.reconnectAttempts = 0;
-        console.error(`Connected to Tauri socket server at ${connectionPath}`);
+        console.error(`Connected to Tauri socket server at ${connectionInfo}`);
         
         // Setup data handler
         this.client!.on('data', (data) => {
@@ -201,5 +230,31 @@ export class TauriSocketClient {
   }
 }
 
+// Create a singleton instance based on environment variables or defaults
+function createSocketClient(): TauriSocketClient {
+  // Check for environment variables to configure connection
+  const connectionType = process.env.TAURI_MCP_CONNECTION_TYPE;
+  
+  if (connectionType === 'tcp') {
+    const host = process.env.TAURI_MCP_TCP_HOST || '127.0.0.1';
+    const port = parseInt(process.env.TAURI_MCP_TCP_PORT || '9999', 10);
+    
+    console.error(`Creating TCP socket client: ${host}:${port}`);
+    return new TauriSocketClient({
+      type: 'tcp',
+      host,
+      port
+    });
+  } else {
+    // Default to IPC
+    const path = process.env.TAURI_MCP_IPC_PATH;
+    console.error(`Creating IPC socket client: ${path || 'default path'}`);
+    return new TauriSocketClient({
+      type: 'ipc',
+      path
+    });
+  }
+}
+
 // Export a singleton instance
-export const socketClient = new TauriSocketClient(); 
+export const socketClient = createSocketClient(); 

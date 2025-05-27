@@ -41,12 +41,36 @@ impl<R: Runtime, T: Manager<R>> crate::TauriMcpExt<R> for T {
     }
 }
 
+/// Socket connection type
+#[derive(Clone, Debug)]
+pub enum SocketType {
+    /// Use IPC (Unix domain socket or Windows named pipe)
+    Ipc {
+        /// Path to the socket file. If None, a default path will be used.
+        path: Option<std::path::PathBuf>,
+    },
+    /// Use TCP socket
+    Tcp {
+        /// Host to bind to (e.g., "127.0.0.1" or "0.0.0.0")
+        host: String,
+        /// Port to bind to
+        port: u16,
+    },
+}
+
+impl Default for SocketType {
+    fn default() -> Self {
+        SocketType::Ipc { path: None }
+    }
+}
+
 /// Plugin configuration options.
 #[derive(Default)]
 pub struct PluginConfig {
-    /// Path to the Unix socket file. If None, a default path in the temp directory will be used.
+    /// Application name (used for default socket naming)
     pub application_name: String,
-    pub socket_path: Option<std::path::PathBuf>,
+    /// Socket configuration
+    pub socket_type: SocketType,
     /// Whether to start the socket server automatically. Default is true.
     pub start_socket_server: bool,
 }
@@ -56,14 +80,20 @@ impl PluginConfig {
     pub fn new(application_name: String) -> Self {
         Self {
             application_name,
-            socket_path: None,
+            socket_type: SocketType::default(),
             start_socket_server: true,
         }
     }
 
-    /// Set the socket path.
+    /// Set the socket path for IPC mode.
     pub fn socket_path(mut self, path: std::path::PathBuf) -> Self {
-        self.socket_path = Some(path);
+        self.socket_type = SocketType::Ipc { path: Some(path) };
+        self
+    }
+
+    /// Configure TCP socket mode.
+    pub fn tcp(mut self, host: String, port: u16) -> Self {
+        self.socket_type = SocketType::Tcp { host, port };
         self
     }
 
@@ -81,18 +111,28 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
 
 /// Initializes the plugin with the given configuration.
 pub fn init_with_config<R: Runtime>(config: PluginConfig) -> TauriPlugin<R> {
-    // Print the socket path if specified
-    if let Some(path) = &config.socket_path {
-        info!(
-            "[TAURI_MCP] Socket server will use custom path: {}",
-            path.display()
-        );
-    } else {
-        let default_path = std::env::temp_dir().join("tauri-mcp.sock");
-        info!(
-            "[TAURI_MCP] Socket server will use default path: {}",
-            default_path.display()
-        );
+    // Log socket configuration
+    match &config.socket_type {
+        SocketType::Ipc { path } => {
+            if let Some(path) = path {
+                info!(
+                    "[TAURI_MCP] Socket server will use custom IPC path: {}",
+                    path.display()
+                );
+            } else {
+                let default_path = std::env::temp_dir().join("tauri-mcp.sock");
+                info!(
+                    "[TAURI_MCP] Socket server will use default IPC path: {}",
+                    default_path.display()
+                );
+            }
+        }
+        SocketType::Tcp { host, port } => {
+            info!(
+                "[TAURI_MCP] Socket server will use TCP: {}:{}",
+                host, port
+            );
+        }
     }
 
     if config.start_socket_server {
