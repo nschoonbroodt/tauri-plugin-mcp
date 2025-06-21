@@ -30,6 +30,9 @@ xcap = "0.0.4"
 [target.'cfg(target_os = "windows")'.dependencies]
 win-screenshot = "4.0.5"
 
+[target.'cfg(not(any(target_os = "macos", target_os = "windows")))'.dependencies]
+xcap = "0.0.4"
+
 [build-dependencies]
 tauri-plugin = { version = "2.2.0", features = ["build"] }
 

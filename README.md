@@ -20,6 +20,24 @@ The Tauri MCP Plugin provides a comprehensive set of tools that allow AI models 
 - **Local Storage Management**: Get, set, remove, and clear localStorage entries
 - **Ping**: Simple connectivity testing to verify the plugin is responsive
 
+## System Dependencies
+
+### Linux/Unix Requirements
+For Linux distributions, you need the following system packages installed:
+
+```bash
+# Ubuntu/Debian
+sudo apt-get install libxcb1-dev libxrandr-dev libdbus-1-dev
+
+# Fedora/RHEL
+sudo dnf install libxcb-devel libXrandr-devel dbus-devel
+
+# Arch Linux
+sudo pacman -S libxcb libxrandr dbus
+```
+
+These dependencies are required for the `xcap` library to capture screenshots on Linux systems supporting both X11 and Wayland.
+
 ## How to build
 ```bash
 pnpm i 
