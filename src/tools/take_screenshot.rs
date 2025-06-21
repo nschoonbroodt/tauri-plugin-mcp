@@ -55,7 +55,7 @@ pub fn process_image(mut dynamic_image: DynamicImage, params: &ScreenshotParams)
     // Try encoding with JPEG
     match dynamic_image.write_to(
         &mut std::io::Cursor::new(&mut output_data),
-        image::ImageOutputFormat::Jpeg(current_quality),
+        image::ImageFormat::Jpeg,
     ) {
         Ok(_) => {
             // Reduce quality if needed to meet max size
@@ -73,7 +73,7 @@ pub fn process_image(mut dynamic_image: DynamicImage, params: &ScreenshotParams)
 
                 if let Err(e) = dynamic_image.write_to(
                     &mut std::io::Cursor::new(&mut output_data),
-                    image::ImageOutputFormat::Jpeg(current_quality),
+                    image::ImageFormat::Jpeg,
                 ) {
                     return Err(Error::WindowOperationFailed(format!(
                         "Failed to re-encode JPEG: {}",
@@ -103,7 +103,7 @@ pub fn process_image(mut dynamic_image: DynamicImage, params: &ScreenshotParams)
                     output_data.clear();
                     if let Err(e) = dynamic_image.write_to(
                         &mut std::io::Cursor::new(&mut output_data),
-                        image::ImageOutputFormat::Jpeg(current_quality),
+                        image::ImageFormat::Jpeg,
                     ) {
                         return Err(Error::WindowOperationFailed(format!(
                             "Failed to encode resized image: {}",
