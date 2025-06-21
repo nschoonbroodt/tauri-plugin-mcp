@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "tauri-mcp": {
+      "command": "node",
+      "args": [
+        "/home/nicolas/code/rusty-assets/tauri-plugin-mcp/mcp-server-ts/dist/index.js"
+      ],
+      "env": {
+        "TAURI_MCP_CONNECTION_TYPE": "tcp",
+        "TAURI_MCP_TCP_HOST": "127.0.0.1",
+        "TAURI_MCP_TCP_PORT": "4000"
+      }
+    }
+  }
+}
