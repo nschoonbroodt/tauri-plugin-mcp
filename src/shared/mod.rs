@@ -2,40 +2,6 @@ use serde::{Deserialize, Serialize};
 
 /// Shared interface traits and types for the MCP server and Tauri plugin
 /// This ensures both sides maintain compatible function signatures
-/// Common parameters for screenshot functionality
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ScreenshotParams {
-    /// The label of the window to capture
-    pub window_label: Option<String>,
-
-    /// JPEG quality (1-100)
-    pub quality: Option<i32>,
-
-    /// Maximum image width in pixels
-    pub max_width: Option<i32>,
-
-    /// Maximum file size in MB
-    pub max_size_mb: Option<f32>,
-
-    /// Application name to look for in window matching
-    pub application_name: Option<String>,
-}
-
-/// Result of taking a screenshot
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ScreenshotResult {
-    /// Whether the operation was successful
-    pub success: bool,
-
-    /// Error message if operation failed
-    pub error: Option<String>,
-
-    /// Image data (if successful) in base64 format with MIME prefix
-    pub data: Option<String>,
-
-    /// MIME type of the image
-    pub mime_type: Option<String>,
-}
 
 // Window manager operation parameters
 #[derive(Debug, Serialize, Deserialize)]
@@ -97,12 +63,6 @@ pub struct MouseMovementResult {
 
 /// Main interface trait for MCP functionality
 pub trait McpInterface {
-    /// Takes a screenshot of the specified window
-    fn take_screenshot_shared(
-        &self,
-        params: ScreenshotParams,
-    ) -> std::result::Result<ScreenshotResult, String>;
-
     /// Manages window operations (resize, position, show/hide, etc.)
     fn manage_window_shared(
         &self,
@@ -127,7 +87,6 @@ pub trait McpInterface {
 /// Command string constants for socket commands
 pub mod commands {
     pub const PING: &str = "ping";
-    pub const TAKE_SCREENSHOT: &str = "take_screenshot";
     pub const GET_DOM: &str = "get_dom";
     pub const MANAGE_LOCAL_STORAGE: &str = "manage_local_storage";
     pub const EXECUTE_JS: &str = "execute_js";

@@ -111,43 +111,6 @@ pub struct TypeTextRequest {
     pub text: String,
 }
 
-// Screenshot request - updated to use shared interface
-#[derive(Debug, Deserialize, Serialize, Clone)]
-#[serde(rename_all = "snake_case")]
-pub struct ScreenshotRequest {
-    pub window_label: String,
-}
-
-impl From<ScreenshotRequest> for crate::shared::ScreenshotParams {
-    fn from(req: ScreenshotRequest) -> Self {
-        Self {
-            window_label: Some(req.window_label),
-            quality: None,
-            max_width: None,
-            max_size_mb: None,
-            application_name: None,
-        }
-    }
-}
-
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ScreenshotResponse {
-    pub data: Option<String>, // Base64 encoded image
-    pub success: bool,
-    pub error: Option<String>,
-}
-
-impl From<crate::shared::ScreenshotResult> for ScreenshotResponse {
-    fn from(result: crate::shared::ScreenshotResult) -> Self {
-        Self {
-            data: result.data,
-            success: result.success,
-            error: result.error,
-        }
-    }
-}
-
 // URL and title requests
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]

@@ -1,45 +1,19 @@
 use crate::error::Error;
 use crate::models::*;
 use crate::shared::{
-    McpInterface, MouseMovementParams, MouseMovementResult, ScreenshotParams,
-    ScreenshotResult as SharedScreenshotResult, TextInputParams, TextInputResult,
+    McpInterface, MouseMovementParams, MouseMovementResult, TextInputParams, TextInputResult,
     WindowManagerParams, WindowManagerResult,
 };
 use crate::socket_server::SocketServer;
 use crate::tools::mouse_movement;
 use crate::{PluginConfig, Result};
 use enigo::{Enigo, Keyboard, Settings};
+use log::info;
 use serde::de::DeserializeOwned;
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::{Duration, Instant};
 use tauri::{AppHandle, Manager, Runtime, plugin::PluginApi};
-use log::info;
-
-// ----- Screenshot Utilities -----
-
-/// Helper structure to hold window for screenshot functions
-pub struct ScreenshotContext<R: Runtime> {
-    pub window: tauri::WebviewWindow<R>,
-}
-
-/// Create a success response with data
-pub fn create_success_response(data_url: String) -> ScreenshotResponse {
-    ScreenshotResponse {
-        data: Some(data_url),
-        success: true,
-        error: None,
-    }
-}
-
-/// Create an error response
-pub fn create_error_response(error_msg: String) -> ScreenshotResponse {
-    ScreenshotResponse {
-        data: None,
-        success: false,
-        error: Some(error_msg),
-    }
-}
 
 // ----- TauriMcp Implementation -----
 
@@ -75,38 +49,6 @@ impl<R: Runtime> TauriMcp<R> {
         Ok(PingResponse {
             value: payload.value,
         })
-    }
-
-    // Take screenshot - this feature depends on Tauri's window capabilities
-    pub async fn take_screenshot_async(
-        &self,
-        payload: ScreenshotRequest,
-    ) -> crate::Result<ScreenshotResponse> {
-        let window_label = payload.window_label.clone();
-
-        let window = self
-            .app
-            .get_webview_window(&window_label)
-            .ok_or_else(|| Error::WindowNotFound(window_label.clone()))?;
-
-        // Create shared parameters struct from the request
-        let params = ScreenshotParams {
-            window_label: Some(window_label),
-            quality: None,
-            max_width: None,
-            max_size_mb: None,
-            application_name: Some(self.application_name.clone()),
-        };
-
-        // Create a context with the window for platform implementation
-        let window_context = ScreenshotContext {
-            window: window.clone(),
-        };
-
-        info!("[TAURI_MCP] Taking screenshot with default parameters");
-
-        // Use platform-specific implementation to capture the window
-        crate::platform::current::take_screenshot(params, window_context).await
     }
 
     // Add async method to perform window operations
@@ -288,31 +230,6 @@ impl<R: Runtime> Drop for TauriMcp<R> {
 
 // Let's implement the interface properly
 impl<R: Runtime> McpInterface for TauriMcp<R> {
-    fn take_screenshot_shared(
-        &self,
-        params: ScreenshotParams,
-    ) -> std::result::Result<SharedScreenshotResult, String> {
-        // Create a ScreenshotRequest from our interface params
-        let window_label = params.window_label.unwrap_or_else(|| "main".to_string());
-
-        let request = ScreenshotRequest { window_label };
-        match futures::executor::block_on(self.take_screenshot_async(request)) {
-            Ok(response) => {
-                // Convert to the shared result type
-                Ok(SharedScreenshotResult {
-                    success: response.success,
-                    error: response.error,
-                    data: response.data,
-                    mime_type: Some("image/jpeg".to_string()),
-                })
-            }
-            Err(err) => {
-                // Convert the error type
-                Err(err.to_string())
-            }
-        }
-    }
-
     fn manage_window_shared(
         &self,
         params: WindowManagerParams,

@@ -1,8 +1,8 @@
+use log::info;
 use tauri::{
     Manager, Runtime,
     plugin::{Builder, TauriPlugin},
 };
-use log::info;
 
 pub use models::*;
 
@@ -17,13 +17,9 @@ mod models;
 pub mod shared;
 mod socket_server;
 mod tools;
-// Platform-specific module
-mod platform;
 
 pub use error::{Error, Result};
-pub use shared::{
-    McpInterface, ScreenshotParams, ScreenshotResult, WindowManagerParams, WindowManagerResult,
-};
+pub use shared::{McpInterface, WindowManagerParams, WindowManagerResult};
 
 #[cfg(desktop)]
 use desktop::TauriMcp;
@@ -128,10 +124,7 @@ pub fn init_with_config<R: Runtime>(config: PluginConfig) -> TauriPlugin<R> {
             }
         }
         SocketType::Tcp { host, port } => {
-            info!(
-                "[TAURI_MCP] Socket server will use TCP: {}:{}",
-                host, port
-            );
+            info!("[TAURI_MCP] Socket server will use TCP: {}:{}", host, port);
         }
     }
 

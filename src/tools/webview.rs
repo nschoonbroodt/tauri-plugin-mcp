@@ -256,7 +256,6 @@ pub async fn handle_send_text_to_element<R: Runtime>(
         crate::error::Error::Anyhow(format!("Invalid payload for send_text_to_element: {}", e))
     })?;
 
-
     // Create a channel to receive the result
     let (tx, rx) = mpsc::channel();
 
